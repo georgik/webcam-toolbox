@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+
+	
+	<fx:Script>
+		<![CDATA[
+			
+			import mx.collections.ArrayCollection;
+			
+			public static const MAX_CAMERA_WIDTH:int = 1024;
+			public static const MAX_CAMERA_HEIGHT:int = 768;
+			public static const MAX_CAMERA_FPS:int = 24;
+			
+			/**
+			 * Use highest resolution by default.
+			 * Camera will fall back to it's own max.
+			 */
+			[Bindable]
+			public var cameraWidth:int = MAX_CAMERA_WIDTH;
+			
+			[Bindable]
+			public var cameraHeight:int = MAX_CAMERA_HEIGHT;
+			
+			[Bindable]
+			public var cameraFrameRate:int = MAX_CAMERA_FPS;
+			
+			/**
+			 * List of available cameras.
+			 */
+			[Bindable]
+			public var camerraArray:ArrayCollection = new ArrayCollection(Camera.names);
+			
+			private var cam:Camera = null;
+			
+			/**
+			 * Attach view to camera selected by user.
+			 */
+			protected function cameraSelector_clickHandler(event:Event):void
+			{
+				var item:String = this.cameraSelector.selectedIndex.toString() as String;
+				
+				cam = Camera.getCamera(item);
+				if(cam)
+				{
+					// Use max resolution and let camera to fall back					
+					cam.setMode(MAX_CAMERA_WIDTH, MAX_CAMERA_HEIGHT, MAX_CAMERA_FPS);
+					camView.attachCamera(cam);
+					
+					// Read values from camera. When camera does not have
+					// capabilities to use maximum, it falls back to it's maximum
+					this.cameraWidth = cam.width;
+					this.cameraHeight = cam.height;
+					this.cameraFrameRate = cam.fps;
+					
+					// Aply changes to viewport
+					this.resizeViewPort();
+				}
+			}
+			
+			
+			//width="{this.cameraWidth}" height="{this.cameraHeight}"
+			
+			/**
+			 * Resize camera viewport.
+			 * If fitToWindow was selected - expand whole camera view.
+			 * If not - schrink it to actual size of camera.
+			 */
+			public function resizeViewPort():void
+			{
+				if (this.fitToWindowCheckBox.selected)
+				{
+					this.camView.percentWidth = 100;
+					this.camView.percentHeight = 100;
+				} else {
+					this.camView.width = this.cameraWidth;
+					this.camView.height = this.cameraHeight;
+				}
+			}
+
+			
+			/**
+			 * Process click at fit to window check box.
+			 */
+			protected function fitToWindowCheckBox_clickHandler(event:MouseEvent):void
+			{
+				this.resizeViewPort();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
+	
+	<s:Group width="100%">
+		<s:layout>
+			<s:HorizontalLayout paddingLeft="5" paddingTop="5"/>
+		</s:layout>
+		
+		<s:Label paddingTop="5" text="Select camera"/>
+		<s:DropDownList id="cameraSelector" dataProvider="{this.camerraArray}" 
+						change="cameraSelector_clickHandler(event)"
+						width="100%" maxWidth="300"/>
+		
+		<s:CheckBox label="Fit to window"
+					id="fitToWindowCheckBox"
+					click="fitToWindowCheckBox_clickHandler(event)"
+					selected="true"/>
+
+	</s:Group>
+	<mx:VideoDisplay id="camView"
+					 width="100%" height="100%"
+					/>
+	
+
+	
+</s:Group>
